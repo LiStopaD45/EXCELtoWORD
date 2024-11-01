@@ -1,0 +1,108 @@
+Sub Work()
+    Dim pathToExcel As String
+    Dim pathToShablon1 As String
+    Dim pathToShablon2 As String
+    Dim pathToOutputFiles As String
+
+    Sheets("Nastroiki").Select
+
+    pathToShablon1 = Range("C6").Value2 ' заполняем в зависимости от нужной структуры
+    pathToShablon2 = Range("C7").Value2
+    pathToOutputFiles = Range("C8").Value2
+    pathToExcel = Range("C9").Value2
+    
+    
+    Sheets("Poisk").Select
+    Dim stringPoiska As String
+    stringPoiska = Range("C5").Value2
+    
+    Dim LetterOut As String
+    ' Проверяем входные данные (пути и файлы, их наличие)
+    If (CheckPaths(pathToShablon1) = True And CheckPaths(pathToShablon2) = True And CheckPathsDir(pathToOutputFiles) = True And CheckPaths(pathToExcel) = True And CheckPoisString(stringPoiska) = True) Then
+'    MsgBox ">>Good<< Start search ---->>>>>*****>>>>>>> " + stringPoiska
+    ' If all good - start rock-n-roll!!!!!)))))
+    ' Open file
+        Set objExcel = New Excel.Application
+        objExcel.Visible = True
+        Set wb = objExcel.Workbooks.Open(pathToExcel)
+        Set ws = wb.Sheets(1)
+        stringPoiska = Trim(stringPoiska)
+            ws.Select
+        ws.Activate
+    ' Start poisk
+        Set findCell = ws.Columns("A:A").Find(stringPoiska)
+            If findCell Is Nothing Then
+                wb.Close True
+                objExcel.Quit
+                MsgBox "Oh! No results!!!!"
+            Else
+                wb.Activate
+                LetterOut = ws.Range("C" + CStr(findCell.Row)).Value2
+                ' MsgBox "Value >>>>  " + stringPoiska + "    " + LetterOut + " Строка " + CStr(findCell.Row)
+                ws.Range("C" + CStr(findCell.Row)).Activate
+                ' Create output letters
+                Call CreateAnswerLetter(pathToShablon1, pathToOutputFiles, stringPoiska, LetterOut)
+                Call CreateAnswerLetter(pathToShablon2, pathToOutputFiles, stringPoiska, LetterOut)
+                wb.Close True
+                objExcel.Quit
+            End If
+    Else
+            MsgBox ">>>>> ***** !!!!! BAD INPUT DATA!!!!! ***** <<<<<"
+    End If
+    
+End Sub
+
+Public Function CheckPaths(pathToFiles As String) As Boolean
+    pathToFiles = Trim(pathToFiles)
+    Set objRegExp = CreateObject("VBScript.RegExp")
+    objRegExp.Pattern = "^[A-Za-z]:\\"
+    If objRegExp.Test(pathToFiles) = False Then CheckPaths = False
+    If objRegExp.Test(pathToFiles) = True Then
+    If IsFile(pathToFiles) = True Then CheckPaths = True
+    If IsFile(pathToFiles) = False Then CheckPaths = False
+    End If
+
+End Function
+Public Function CheckPathsDir(pathToDir As String) As Boolean
+    pathToDir = Trim(pathToDir)
+    Set objRegExp = CreateObject("VBScript.RegExp")
+    objRegExp.Pattern = "^[A-Za-z]:\\"
+    If objRegExp.Test(pathToDir) = False Then CheckPathsDir = False
+    If objRegExp.Test(pathToDir) = True Then
+    If CreateObject("Scripting.FileSystemObject").FolderExists(pathToDir) = True Then CheckPathsDir = True
+    If CreateObject("Scripting.FileSystemObject").FolderExists(pathToDir) = False Then CheckPathsDir = False
+    End If
+
+End Function
+
+Public Function IsFile(s)
+    IsFile = CreateObject("Scripting.FileSystemObject").FileExists(s)
+End Function
+
+Public Function CheckPoisString(stringPoiskaObject As String) As Boolean
+    stringPoiskaObject = Trim(stringPoiskaObject)
+    If Len(stringPoiskaObject) > 4 Then CheckPoisString = True
+    If Len(stringPoiskaObject) < 4 Then CheckPoisString = False
+
+End Function
+
+Public Function CreateAnswerLetter(pathShablona As String, pathSaveWord As String, NomerObject As String, NomerDoument As String)
+
+    Set wa = CreateObject("Word.Application")
+    wa.Visible = True
+ 
+    Set wd = wa.documents.Add(pathShablona)
+    wd.Bookmarks("**** YOR NAME BOOKMARKS #1 *****").Range.Text = NomerObject
+    wd.Bookmarks("**** YOR NAME BOOKMARKS #2 *****").Range.Text = NomerDocument
+    
+    wd.Bookmarks("**** YOR NAME BOOKMARKS #1 *****").Delete
+    wd.Bookmarks("**** YOR NAME BOOKMARKS #2 *****").Delete
+     
+'    wd.SaveAs Filename:=pathSaveWord & "Otvet_" & ".docx"
+ 
+'    wd.Close True
+'    wa.Quit
+    Set wa = Nothing
+    Set wd = Nothing
+
+End Function
